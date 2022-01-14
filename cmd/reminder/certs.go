@@ -115,7 +115,7 @@ func getCertsInfo() []item {
 }
 
 func decrypt(content []byte) ([]byte, error) {
-	block, err := aes.NewCipher([]byte(certsEncryptionKey))
+	block, err := aes.NewCipher(certsEncryptionKey)
 	if err != nil {
 		return nil, err
 	}

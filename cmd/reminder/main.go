@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"text/template"
@@ -31,10 +33,43 @@ var (
 	regionIds []string
 
 	certsDir           string
-	certsEncryptionKey string
+	certsEncryptionKey []byte
 )
 
 func main() {
+	defaultConfigFile := ".ossenc.go"
+	if home, _ := os.UserHomeDir(); home != "" {
+		defaultConfigFile = filepath.Join(home, defaultConfigFile)
+	}
+	configFile := flag.String("c", defaultConfigFile, "location of the config file")
+	createConfig := flag.Bool("C", false, "create (update if exists) config file and exit")
+	flag.Parse()
+
+	conf := readConf(*configFile, *createConfig)
+
+	ac = aliyun.Client{
+		AccessKeyId:     conf.AliyunAccessKeyId,
+		AccessKeySecret: conf.AliyunAccessKeySecret,
+	}
+
+	regionIds = conf.AliyunRegionIds
+
+	tc = tencentcloud.Client{
+		AccessKeyId:     conf.TencentCloudAccessKeyId,
+		AccessKeySecret: conf.TencentCloudAccessKeySecret,
+	}
+
+	oc = ossslim.Client{
+		AccessKeyId:     conf.OSSAccessKeyId,
+		AccessKeySecret: conf.OSSAccessKeySecret,
+		Prefix:          conf.OSSPrefix,
+		Bucket:          conf.OSSBucket,
+	}
+
+	certsDir = conf.OSSCertsDir
+
+	certsEncryptionKey = conf.OSSCertsEncryptionKey
+
 	var tplData struct {
 		Now string
 
